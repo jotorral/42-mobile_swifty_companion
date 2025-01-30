@@ -1,40 +1,52 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:oauth2/oauth2.dart' as oauth2;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
-  static const String clientId = "YOUR_CLIENT_ID";
-  static const String clientSecret = "YOUR_CLIENT_SECRET";
-  static const String authorizationEndpoint = "https://api.intra.42.fr/oauth/authorize";
-  static const String tokenEndpoint = "https://api.intra.42.fr/oauth/token";
-  static const String redirectUrl = "com.example.mobile_swifty_companion:/oauth2redirect";
+  static String get clientId => dotenv.env['CLIENT_ID'] ?? 'default_client_id';
+  static String get clientSecret =>
+      dotenv.env['CLIENT_SECRET'] ?? 'default_client_secret';
+  static String get tokenEndpoint =>
+      dotenv.env['TOKEN_ENDPOINT'] ?? 'https://api.intra.42.fr/v2/oauth/token';
 
-  late oauth2.Client _client;
+  String? _accessToken;
 
-  Future<void> authenticate() async {
-    final authorizationCodeGrant = oauth2.AuthorizationCodeGrant(
-      clientId,
-      Uri.parse(authorizationEndpoint),
+  Future<void> authenticateWithClientCredentials() async {
+    final response = await http.post(
       Uri.parse(tokenEndpoint),
-      secret: clientSecret,
+      body: {
+        'grant_type': 'client_credentials',
+        'client_id': clientId,
+        'client_secret': clientSecret,
+      },
     );
 
-    final authorizationUrl = authorizationCodeGrant.getAuthorizationUrl(Uri.parse(redirectUrl));
-
-    // Abre el navegador para la autenticación (esto puede variar según la plataforma).
-    print("Visita esta URL para autenticarte: $authorizationUrl");
-
-    // Simulación: el usuario ingresa el código de autorización.
-    print("Introduce el código de autorización:");
-    final String authorizationCode = stdin.readLineSync()!;
-
-    // Solicitar token de acceso.
-    _client = await authorizationCodeGrant.handleAuthorizationCode(authorizationCode);
-    print("Token de acceso obtenido: ${_client.credentials.accessToken}");
+    if (response.statusCode == 200) {
+      final tokenData = jsonDecode(response.body);
+      _accessToken = tokenData['access_token'];
+      debugPrint("Token obtenido: $_accessToken");
+    } else {
+      throw Exception("Error al obtener el token: ${response.body}");
+    }
   }
 
-  Future<Map<String, dynamic>> fetchPublicData() async {
-    final response = await _client.get(Uri.parse("https://api.intra.42.fr/v2/cursus"));
-    return jsonDecode(response.body);
+  Future<List<dynamic>> fetchPublicData({int page = 1}) async {
+    if (_accessToken == null) {
+      throw Exception("No hay token disponible. Llama a authenticate primero.");
+    }
+
+    final response = await http.get(
+      // Uri.parse("https://api.intra.42.fr/v2/cursus/42/users"),
+      // Uri.parse("https://api.intra.42.fr/v2/flash_users?page[size]=10"),
+      Uri.parse("https://api.intra.42.fr/v2/campus/40/users?page=$page&per_page=100"),
+      headers: {'Authorization': 'Bearer $_accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw Exception("Error al obtener datos: ${response.body}");
+    }
   }
 }
