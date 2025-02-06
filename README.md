@@ -2,9 +2,15 @@
 
 A new Flutter project.
 
-Mirar
-Error: Exception: Error al obtener datos: 429 Too Many Requests (Spam Rate Limit Exceeded)
-Por pinchar demasiadas veces en Obtener datos con un login, supongo (aquí hago la consulta de obtener el token y de obtención de las páginas con listas de alumnos para ver si exite en login buscado en ellas, pero no hago la siguiente consulta para buscar datos del alumno a partir del Id)
+## Getting Started
 
+This project is a starting point for a Flutter application.
 
+A few resources to get you started if this is your first Flutter project:
 
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

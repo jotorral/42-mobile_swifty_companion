@@ -1,88 +1,38 @@
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../services/auth_service.dart';
+import '../main.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class SearchLogin extends StatelessWidget {
+  const SearchLogin({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OAuth2 App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const HomePage(),
-    );
+    return const SearchLoginPage();
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class SearchLoginPage extends StatefulWidget {
+  const SearchLoginPage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<SearchLoginPage> createState() => _SearchLoginPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _SearchLoginPageState extends State<SearchLoginPage> {
   final AuthService _authService = AuthService();
-  String _responseData = "Presiona el botón para obtener datos";
+
 
   final TextEditingController _textController = TextEditingController();
   String text = '';
+  bool _isLoading = false;
+  String _responseData = "Presiona el botón para obtener datos";
 
-  void _showText() {
-    text = _textController.text; // Obtener el valor del TextField
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Texto ingresado: $text')),
-    );
-  }
-
-  Future<void> _fetchData() async {
-    try {
-      await _authService.authenticateWithClientCredentials();
-      final data = await _authService.fetchPublicData();
-
-      List<Map<String, dynamic>> filteredData = data.map((user) {
-        return {
-          'id': user['id'],
-          'login': user['login'],
-          'email': user['email'],
-          'phone': user['phone'],
-          'displayname': user['displayname'],
-          'image_url': user['image_url'],
-          'first_name': user['first_name'],
-          'last_name': user['last_name'],
-          'pool_month': user['pool_month'],
-          'pool_year': user['pool_year'],
-          'wallet': user['wallet'],
-        };
-      }).toList();
-
-      debugPrint("Datos obtenidos: $filteredData\n");
-      setState(() {
-        _responseData = filteredData
-            .map((e) =>
-                "ID: ${e['id']}, Login: ${e['login']}, Email: ${e['email']}, Phone: ${e['phone']}, Displayname: ${e['displayname']}, Image URL: ${e['image_url']}")
-            .join("\n");
-      });
-    } catch (e) {
-      setState(() {
-        _responseData = "Error: $e";
-      });
-    }
-  }
 
   Future<void> _fetchUserId(String login) async {
+    setState((){ _isLoading = true; });
     try {
-      await _authService.authenticateWithClientCredentials();
+      // await _authService.ensureAValidToken();
 
-      List<dynamic> allUsers =
-          []; /* ****************** eliminar ******************* */
       int page = 1;
       bool hasNextPage = true;
       Map<String, dynamic>? foundUser;
@@ -91,6 +41,10 @@ class _HomePageState extends State<HomePage> {
         final List<dynamic> data =
             await _authService.fetchPublicData(page: page);
         debugPrint("Página $page - Datos recibidos: ${data.length} usuarios");
+
+        setState(() {
+          _responseData = "Buscando en página $page (${data.length} usuarios)\n";          
+        });
 
         foundUser = data.firstWhere(
           (user) => user['login'] == login,
@@ -111,8 +65,10 @@ class _HomePageState extends State<HomePage> {
       if (foundUser != null) {
         debugPrint("Usuario encontrado: $foundUser");
         setState(() {
-          _responseData =
-              "ID del Login ${foundUser?['login']}: ${foundUser?['id']}";
+          studentID = foundUser?['id'];
+        //   _responseData =
+        //       "ID del Login ${foundUser?['login']}: ${foundUser?['id']}";
+        (context.findAncestorStateOfType<PantallaPrincipalState>()!).cambiarPantalla(1);
         });
       } else {
         setState(() {
@@ -123,6 +79,8 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _responseData = "Error: $e";
       });
+    } finally {
+      setState((){ _isLoading = false; });
     }
   }
 
@@ -141,6 +99,7 @@ class _HomePageState extends State<HomePage> {
                   border: OutlineInputBorder(),
                   labelText: 'Ingresa un login',
                 ),
+                autofocus: false,
                 onChanged: (value) {
                   text = value;
                 },
@@ -148,10 +107,14 @@ class _HomePageState extends State<HomePage> {
             ),
             ElevatedButton(
               // onPressed: _fetchData,
-              onPressed: () {
+              onPressed: _isLoading
+              ? null
+              : () {
                 _fetchUserId(text);
               },
-              child: const Text('Obtener Datos'),
+              child: _isLoading
+              ? const CircularProgressIndicator(color: Colors.black54)
+              : const Text('Obtener Datos'),
             ),
             const SizedBox(height: 20),
             Expanded(

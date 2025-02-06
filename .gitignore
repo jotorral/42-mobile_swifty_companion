@@ -4,6 +4,7 @@
 *.pyc
 *.swp
 .env
+README.dm
 .DS_Store
 .atom/
 .build/

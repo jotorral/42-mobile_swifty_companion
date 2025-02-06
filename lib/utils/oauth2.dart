@@ -5,7 +5,7 @@ import 'package:oauth2/oauth2.dart';
 //     'client-id',
 //     'client-secret',
 //   );
-  
+
 //   final client = await clientCredentialsGrant(
 //     Uri.parse('https://example.com/token'),
 //     credentials,
