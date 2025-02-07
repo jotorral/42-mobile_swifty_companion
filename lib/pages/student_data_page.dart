@@ -33,13 +33,8 @@ class _StudentDataPageState extends State<StudentDataPage> {
 
   Future<void> _fetchUserData(String login) async {
     try {
-      // await _authService.ensureAValidToken();
-
-      int page = 1;
-      bool hasNextPage = true;
-      Map<String, dynamic>? foundUser;
       Map<String, dynamic> data = {};
-      // await Future.delayed(Duration(milliseconds: 510));
+
       try {
         data = await _authService.fetchUserData();
         if (data.isEmpty) {
@@ -55,7 +50,6 @@ class _StudentDataPageState extends State<StudentDataPage> {
         });
         return;
       }
-      // debugPrint("Nombre mostrado: $data['displayname']\n");
 
       _imageUrl = data['image']?['versions']?['small'] ??
           'https://cdn.intra.42.fr/users/849659cfad506ac81c73c6b3228401e8/default.jpg';
@@ -63,13 +57,25 @@ class _StudentDataPageState extends State<StudentDataPage> {
       var level = (data['cursus_users'] is List)
           ? (
               // Buscar el primer curso cuyo 'end_at' sea null
-              data['cursus_users'].firstWhere(
-              (cursus) => cursus['end_at'] == null,
-              orElse: () {
-                // Si no hay ningún curso con 'end_at' null, tomar el último
-                return (data['cursus_users'].last);
-              },
-            )['level'].toString())
+              data['cursus_users']
+                  .firstWhere((cursus) => cursus['end_at'] == null,
+                      orElse: () => data['cursus_users'].firstWhere(
+                            (cursus) => cursus['cursus']['kind'] == 'main',
+                            orElse: () {
+                              return data['cursus_users'].reduce(
+                                (a, b) {
+                                  if (a['cursus']['end_at']
+                                          .compareTo(b['cursus']['end_at']) <
+                                      0) {
+                                    return a;
+                                  } else {
+                                    return b;
+                                  }
+                                },
+                              );
+                            },
+                          ))['level']
+                  .toString())
           : 'No disponible';
 
       String formattedLevel = 'No disponible';
@@ -87,6 +93,37 @@ class _StudentDataPageState extends State<StudentDataPage> {
 
       debugPrint("Formatted Level: $formattedLevel");
 
+
+      // Buscar el curso relevante
+      var relevantCursus = data['cursus_users'].firstWhere(
+        (cursus) => cursus['end_at'] == null,
+        orElse: () => data['cursus_users'].firstWhere(
+          (cursus) => cursus['cursus']['kind'] == 'main',
+          orElse: () {
+            return data['cursus_users'].reduce(
+              (a, b) {
+                if (a['cursus']['end_at'].compareTo(b['cursus']['end_at']) < 0) {
+                  return a;
+                } else {
+                  return b;
+                }
+              },
+            );
+          },
+        ),
+      );
+
+      // Obtener los skills del curso relevante
+      var skills = relevantCursus['skills'];
+
+      // Formatear los skills
+      String formattedSkills = skills
+          .map((skill) {
+            return "- ${skill['name']} (Nivel: ${skill['level'] != null ? (skill['level'] as double).toStringAsFixed(2) : 'Desconocido'})";
+          })
+          .join('\n');
+
+
       usualFullName = """
           Nombre completo: ${data['usual_full_name'] ?? 'No disponible'}
           Login: ${data['login'] ?? 'No disponible'}
@@ -96,6 +133,9 @@ class _StudentDataPageState extends State<StudentDataPage> {
           Año de comienzo: ${data['pool_year'] ?? 'No disponible'}
           Monedero: ${data['wallet'] ?? 'No disponible'}
           Level: $formattedLevel
+
+          Skills:
+          $formattedSkills
 
           Proyectos:
           ${(data['projects_users']?.isNotEmpty ?? false) ? data['projects_users']!.map((project) => "- ${project['project']['name']} (Validado: ${project['validated?'] == true ? 'Sí' : 'No'})").join('\n') : 'No ha realizado.'}
@@ -127,19 +167,11 @@ class _StudentDataPageState extends State<StudentDataPage> {
       body: Center(
         child: Column(
           children: [
-            // ElevatedButton(
-            //   // onPressed: _fetchData,
-            //   onPressed: () {
-            //     _fetchUserData(text);
-            //   },
-            //   child: Text('Login Existe con ID: $studentID'),
-            // ),
-            // const SizedBox(height: 20),
             if (_imageUrl.isNotEmpty)
               Image.network(
                 _imageUrl,
-                width: 150,
-                height: 150,
+                width: 100,
+                height: 100,
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;

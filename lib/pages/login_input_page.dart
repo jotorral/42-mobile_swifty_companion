@@ -20,8 +20,6 @@ class SearchLoginPage extends StatefulWidget {
 
 class _SearchLoginPageState extends State<SearchLoginPage> {
   final AuthService _authService = AuthService();
-
-
   final TextEditingController _textController = TextEditingController();
   String text = '';
   bool _isLoading = false;
@@ -31,8 +29,6 @@ class _SearchLoginPageState extends State<SearchLoginPage> {
   Future<void> _fetchUserId(String login) async {
     setState((){ _isLoading = true; });
     try {
-      // await _authService.ensureAValidToken();
-
       int page = 1;
       bool hasNextPage = true;
       Map<String, dynamic>? foundUser;
@@ -66,8 +62,6 @@ class _SearchLoginPageState extends State<SearchLoginPage> {
         debugPrint("Usuario encontrado: $foundUser");
         setState(() {
           studentID = foundUser?['id'];
-        //   _responseData =
-        //       "ID del Login ${foundUser?['login']}: ${foundUser?['id']}";
         (context.findAncestorStateOfType<PantallaPrincipalState>()!).cambiarPantalla(1);
         });
       } else {
@@ -106,7 +100,6 @@ class _SearchLoginPageState extends State<SearchLoginPage> {
               ),
             ),
             ElevatedButton(
-              // onPressed: _fetchData,
               onPressed: _isLoading
               ? null
               : () {

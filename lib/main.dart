@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 // import 'package:firebase_ui_database/firebase_ui_database.dart';
 import 'pages/login_input_page.dart';
 import 'pages/student_data_page.dart';
-import 'services/auth_service.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
