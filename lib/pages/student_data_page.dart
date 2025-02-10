@@ -119,7 +119,7 @@ class _StudentDataPageState extends State<StudentDataPage> {
       // Formatear los skills
       String formattedSkills = skills
           .map((skill) {
-            return "- ${skill['name']} (Nivel: ${skill['level'] != null ? (skill['level'] as double).toStringAsFixed(2) : 'Desconocido'})";
+            return "- ${skill['name']} (Nivel: ${skill['level'] != null ? (skill['level'] as double).toStringAsFixed(2) : 'Desconocido'} / ${skill['level'] != null ? ((skill['level'] as double) * 10).toStringAsFixed(0) : 'Desconocido'}%)";
           })
           .join('\n');
 
@@ -164,35 +164,38 @@ class _StudentDataPageState extends State<StudentDataPage> {
           },
         ),
       ),
-      body: Center(
-        child: Column(
-          children: [
-            if (_imageUrl.isNotEmpty)
-              Image.network(
-                _imageUrl,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.error, size: 50, color: Colors.red);
-                },
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Center(
+          child: Column(
+            children: [
+              if (_imageUrl.isNotEmpty)
+                Image.network(
+                  _imageUrl,
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.error, size: 50, color: Colors.red);
+                  },
+                ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                      children: _responseData
+                          .split("\n")
+                          .map((line) =>
+                              Text(line, style: const TextStyle(fontSize: 16)))
+                          .toList()),
+                ),
               ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                    children: _responseData
-                        .split("\n")
-                        .map((line) =>
-                            Text(line, style: const TextStyle(fontSize: 16)))
-                        .toList()),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
